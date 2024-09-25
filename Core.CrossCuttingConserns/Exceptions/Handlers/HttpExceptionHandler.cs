@@ -28,4 +28,12 @@ public class HttpExceptionHandler : ExceptionHandler
 
         return Response.WriteAsync(details);
     }
+
+    protected override Task HandleException(ValidationException validationException)
+    {
+        Response.StatusCode = StatusCodes.Status500InternalServerError;
+        string details = new ValidationErrorDetails(validationException.Errors).AsJson();
+
+        return Response.WriteAsync(details);
+    }
 }
