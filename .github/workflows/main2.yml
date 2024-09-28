@@ -1,0 +1,44 @@
+name: Code Review Workflow
+
+on:
+  push:
+    branches:
+      - main  # Ana dalınızı buraya yazın
+
+jobs:
+  code_review:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Set up .NET
+      uses: actions/setup-dotnet@v2
+      with:
+        dotnet-version: '6.0.x'  # Kullandığınız .NET sürümünü belirtin
+
+    - name: Restore dependencies
+      run: dotnet restore
+
+    - name: Build solution
+      run: dotnet build --no-restore
+
+    - name: Run code analysis
+      env:
+        OPENAI_API_KEY: ${{ secrets.FASTBUND }}  # OpenAI için oluşturduğunuz secret key
+      run: |
+        echo "Starting code analysis..."
+        for project in Core.Application Core.CrossCuttingConsern Core.Persistence; do
+          echo "Analyzing project: $project"
+          # OpenAI API'yi çağırın ve sonuçları kontrol edin
+          response=$(curl -s -X POST "https://api.openai.com/v1/completions" \
+          -H "Authorization: Bearer $OPENAI_API_KEY" \
+          -H "Content-Type: application/json" \
+          -d '{
+            "model": "text-davinci-003",
+            "prompt": "Analyze the code in the project: '$project'",
+            "max_tokens": 150
+          }')
+          echo "Response: $response"
+        done
