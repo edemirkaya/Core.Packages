@@ -39,12 +39,12 @@ jobs:
     - name: Send Code to OpenAI for Review
       id: openai_review
       env:
-        OPENAI_API_KEY: ${{ Fastbund }}
+        OPENAI_API_KEY: ${{ FASTBUND }}
       run: |
         # OpenAI API ile etkileşime geçmek için cURL kullanacağız
         REVIEW=$(curl https://api.openai.com/v1/completions \
           -H "Content-Type: application/json" \
-          -H "Authorization: Bearer $Fastbund" \
+          -H "Authorization: Bearer $FASTBUND" \
           -d '{
             "model": "text-davinci-003",
             "prompt": "Aşağıdaki C# kodunu inceleyip geliştirme önerilerinde bulun:",
