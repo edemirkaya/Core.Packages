@@ -1,0 +1,66 @@
+name: Code Review with OpenAI
+
+on:
+  push:
+    branches: [ master ] 
+
+jobs:
+  code-review:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v3
+
+    - name: Set up .NET
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: '8.0.x'
+
+    - name: Install Dependencies
+      run: dotnet restore
+
+    - name: Collect Code for Review
+      id: collect_code
+      run: |
+        # Değişen dosyaları listele
+        CHANGED_FILES=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep '\.cs$' || true)
+        echo "Changed C# files:"
+        echo "$CHANGED_FILES"
+        # Tüm değişiklikleri tek bir dosyada birleştir
+        echo "" > code_changes.txt
+        for file in $CHANGED_FILES; do
+          echo "### $file ###" >> code_changes.txt
+          cat "$file" >> code_changes.txt
+          echo -e "\n\n" >> code_changes.txt
+        done
+        echo "::set-output name=files::$CHANGED_FILES"
+
+    - name: Send Code to OpenAI for Review
+      id: openai_review
+      env:
+        OPENAI_API_KEY: ${{ Fastbund }}
+      run: |
+        # OpenAI API ile etkileşime geçmek için cURL kullanacağız
+        REVIEW=$(curl https://api.openai.com/v1/completions \
+          -H "Content-Type: application/json" \
+          -H "Authorization: Bearer $Fastbund" \
+          -d '{
+            "model": "text-davinci-003",
+            "prompt": "Aşağıdaki C# kodunu inceleyip geliştirme önerilerinde bulun:",
+            "max_tokens": 1500,
+            "temperature": 0.5,
+            "stop": null
+          }' --data-binary @code_changes.txt)
+        
+        echo "review<<EOF" >> $GITHUB_ENV
+        echo "$REVIEW" >> $GITHUB_ENV
+        echo "EOF" >> $GITHUB_ENV
+
+    - name: Post Review as PR Comment
+      if: github.event_name == 'pull_request'
+      uses: marocchino/sticky-pull-request-comment@v2
+      with:
+        message: |
+          ### OpenAI Code Review
+          ${{ steps.openai_review.outputs.review }}
