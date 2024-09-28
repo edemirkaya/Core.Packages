@@ -20,7 +20,7 @@ jobs:
       - name: Set up .NET
         uses: actions/setup-dotnet@v3
         with:
-          dotnet-version: '7.0.x' # Projenizin .NET sürümünü buraya yazın
+          dotnet-version: '8.0.x' # Projenizin .NET sürümünü buraya yazın
 
       - name: Install Dependencies
         run: dotnet restore
@@ -72,7 +72,7 @@ jobs:
             -H "Content-Type: application/json" \
             -H "Authorization: Bearer $OPENAI_API_KEY" \
             -d '{
-              "model": "gpt-4",
+              "model": "gpt-3.5-turbo-0125",
               "prompt": "Aşağıdaki Core.Application C# kodunu inceleyip geliştirme önerilerinde bulun:",
               "max_tokens": 1500,
               "temperature": 0.5
@@ -87,7 +87,7 @@ jobs:
             -H "Content-Type: application/json" \
             -H "Authorization: Bearer $OPENAI_API_KEY" \
             -d '{
-              "model": "gpt-4",
+              "model": "gpt-3.5-turbo-0125",
               "prompt": "Aşağıdaki Core.CrossCuttingConsern C# kodunu inceleyip geliştirme önerilerinde bulun:",
               "max_tokens": 1500,
               "temperature": 0.5
@@ -102,7 +102,7 @@ jobs:
             -H "Content-Type: application/json" \
             -H "Authorization: Bearer $OPENAI_API_KEY" \
             -d '{
-              "model": "gpt-4",
+              "model": "gpt-3.5-turbo-0125",
               "prompt": "Aşağıdaki Core.Persistence C# kodunu inceleyip geliştirme önerilerinde bulun:",
               "max_tokens": 1500,
               "temperature": 0.5
