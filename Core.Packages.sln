@@ -7,7 +7,14 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Core.Persistence", "Core.Pe
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Core.Application", "Core.Application\Core.Application.csproj", "{67753993-F172-4EA7-A16B-265F660F23B6}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Core.CrossCuttingConserns", "Core.CrossCuttingConserns\Core.CrossCuttingConserns.csproj", "{E22A1C08-B62E-4FFA-80BA-E241466AD862}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Core.CrossCuttingConserns", "Core.CrossCuttingConserns\Core.CrossCuttingConserns.csproj", "{E22A1C08-B62E-4FFA-80BA-E241466AD862}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".github", ".github", "{C321EED4-0F08-438B-9908-8D4A314AC187}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "workflows", "workflows", "{01EF37EA-799A-4C4B-AB0B-AE21747CD696}"
+	ProjectSection(SolutionItems) = preProject
+		code_review.yml = code_review.yml
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -30,6 +37,9 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{01EF37EA-799A-4C4B-AB0B-AE21747CD696} = {C321EED4-0F08-438B-9908-8D4A314AC187}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {16E8A115-D511-404C-ACD2-4566580681F2}
