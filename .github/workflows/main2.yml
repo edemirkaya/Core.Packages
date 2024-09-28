@@ -3,7 +3,7 @@ name: Code Review Workflow
 on:
   push:
     branches:
-      - main  # Ana dalınızı buraya yazın
+      - master  # Ana dalınızı buraya yazın
 
 jobs:
   code_review:
@@ -16,7 +16,7 @@ jobs:
     - name: Set up .NET
       uses: actions/setup-dotnet@v2
       with:
-        dotnet-version: '6.0.x'  # Kullandığınız .NET sürümünü belirtin
+        dotnet-version: '8.0.x'  # Kullandığınız .NET sürümünü belirtin
 
     - name: Restore dependencies
       run: dotnet restore
