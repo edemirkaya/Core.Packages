@@ -1,34 +1,128 @@
-name: Code Review Workflow
+name: Code Review with OpenAI
 
 on:
   push:
-    branches:
-      - master  # Ana dalınızı buraya yazın
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
 
 jobs:
-  code_review:
+  code-review:
     runs-on: ubuntu-latest
 
+    env:
+      OPENAI_API_KEY: ${{ secrets.FASTBUND }}
+
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v2
+      - name: Checkout Repository
+        uses: actions/checkout@v3
 
-    - name: Set up .NET
-      uses: actions/setup-dotnet@v2
-      with:
-        dotnet-version: '8.0.x'  # Kullandığınız .NET sürümünü belirtin
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: '8.0.x' # Projenizin .NET sürümünü buraya yazın
 
-    - name: Restore dependencies
-      run: dotnet restore
+      - name: Install Dependencies
+        run: dotnet restore
 
-    - name: Build solution
-      run: dotnet build --no-restore
+      - name: Install jq
+        run: sudo apt-get install -y jq
 
-    - name: Run code analysis
-      env:
-        OPENAI_API_KEY: ${{ secrets.FASTBUND }}  # OpenAI için oluşturduğunuz secret key
-      run: |
-        # Her katmandaki kod incelemesini yapmak için OpenAI API'yi çağırın
-        for project in Core.Application Core.CrossCuttingConsern Core.Persistence; do
-          dotnet run --project $project
-        done
+      - name: Collect Code for Review
+        id: collect_code
+        run: |
+          # Katmanlara göre dosyaları toplayın
+          APPLICATION_FILES=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep '^Core\.Application/' || true)
+          CROSSCUTTING_FILES=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep '^Core\.CrossCuttingConcerns/' || true)
+          PERSISTENCE_FILES=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep '^Core\.Persistence/' || true)
+
+          # Her katman için ayrı ayrı dosyalar oluşturun
+          echo "" > application_changes.txt
+          for file in $APPLICATION_FILES; do
+            echo "### $file ###" >> application_changes.txt
+            cat "$file" >> application_changes.txt
+            echo -e "\n\n" >> application_changes.txt
+          done
+
+          echo "" > crosscutting_changes.txt
+          for file in $CROSSCUTTING_FILES; do
+            echo "### $file ###" >> crosscutting_changes.txt
+            cat "$file" >> crosscutting_changes.txt
+            echo -e "\n\n" >> crosscutting_changes.txt
+          done
+
+          echo "" > persistence_changes.txt
+          for file in $PERSISTENCE_FILES; do
+            echo "### $file ###" >> persistence_changes.txt
+            cat "$file" >> persistence_changes.txt
+            echo -e "\n\n" >> persistence_changes.txt
+          done
+
+      - name: Send Core.Application Code to OpenAI for Review
+        id: openai_application_review
+        run: |
+          RESPONSE=$(curl https://api.openai.com/v1/chat/completions \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer $OPENAI_API_KEY" \
+            -d '{
+              "model": "gpt-3.5-turbo",
+              "messages": [{"role": "user", "content": "Aşağıdaki Core.Application C# kodunu inceleyip geliştirme önerilerinde bulun:"}],
+              "max_tokens": 1500,
+              "temperature": 0.5
+            }' --data-binary @application_changes.txt)
+
+          echo "::set-output name=application_review::$(echo $RESPONSE | jq -r '.choices[0].message.content')"
+
+      - name: Send Core.CrossCuttingConcerns Code to OpenAI for Review
+        id: openai_crosscutting_review
+        run: |
+          RESPONSE=$(curl https://api.openai.com/v1/chat/completions \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer $OPENAI_API_KEY" \
+            -d '{
+              "model": "gpt-3.5-turbo",
+              "messages": [{"role": "user", "content": "Aşağıdaki Core.CrossCuttingConcerns C# kodunu inceleyip geliştirme önerilerinde bulun:"}],
+              "max_tokens": 1500,
+              "temperature": 0.5
+            }' --data-binary @crosscutting_changes.txt)
+
+          echo "::set-output name=crosscutting_review::$(echo $RESPONSE | jq -r '.choices[0].message.content')"
+
+      - name: Send Core.Persistence Code to OpenAI for Review
+        id: openai_persistence_review
+        run: |
+          RESPONSE=$(curl https://api.openai.com/v1/chat/completions \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer $OPENAI_API_KEY" \
+            -d '{
+              "model": "gpt-3.5-turbo",
+              "messages": [{"role": "user", "content": "Aşağıdaki Core.Persistence C# kodunu inceleyip geliştirme önerilerinde bulun:"}],
+              "max_tokens": 1500,
+              "temperature": 0.5
+            }' --data-binary @persistence_changes.txt)
+
+          echo "::set-output name=persistence_review::$(echo $RESPONSE | jq -r '.choices[0].message.content')"
+
+      - name: Post Core.Application Review as PR Comment
+        if: github.event_name == 'pull_request'
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          message: |
+            ### OpenAI Code Review - Core.Application
+            ${{ steps.openai_application_review.outputs.application_review }}
+
+      - name: Post Core.CrossCuttingConcerns Review as PR Comment
+        if: github.event_name == 'pull_request'
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          message: |
+            ### OpenAI Code Review - Core.CrossCuttingConcerns
+            ${{ steps.openai_crosscutting_review.outputs.crosscutting_review }}
+
+      - name: Post Core.Persistence Review as PR Comment
+        if: github.event_name == 'pull_request'
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          message: |
+            ### OpenAI Code Review - Core.Persistence
+            ${{ steps.openai_persistence_review.outputs.persistence_review }}
