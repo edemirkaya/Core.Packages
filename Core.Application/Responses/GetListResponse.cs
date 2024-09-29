@@ -4,7 +4,7 @@ namespace Core.Application.Responses;
 
 public class GetListResponse<T>:BasePageableModel
 {
-    private IList<T> _items;
+    private IList<T>? _items;
 
     public IList<T> Items
     {
